@@ -150,14 +150,36 @@ def visualize3DKmeans(df,columns,hover_data,cluster):
 hover_data=df.columns
 #visualize3DKmeans(df,columns,hover_data,cluster)
 
-def showCustomersByCluster(df):
+'''def showCustomersByCluster(df):
     clusters = sorted(df["cluster"].unique())
     for cluster in clusters:
         print(f"\n=== CLUSTER {cluster} ===")
         cluster_df = df[df["cluster"] == cluster]
         print(cluster_df.to_string(index=False))
         print(f"Total customers in Cluster {cluster}: {len(cluster_df)}")
-showCustomersByCluster(df)
+showCustomersByCluster(df)'''
+
+def showCustomersByCluster(df):
+    clusters = sorted(df["cluster"].unique())
+    cluster_data = {}
+
+    for cluster in clusters:
+        cluster_df = df[df["cluster"] == cluster]
+        cluster_data[cluster] = {
+            "data": cluster_df,
+            "count": len(cluster_df)
+        }
+    return cluster_data
+
+
+result = showCustomersByCluster(df)
+
+for cluster, info in result.items():
+    print(f"\n=== CLUSTER {cluster} ===")
+    print(info["data"].to_string(index=False))
+    print(f"Total customers in Cluster {cluster}: {info['count']}")
+
+
 
 
 from flask import Flask, render_template_string, send_file
@@ -167,14 +189,16 @@ import io
 app = Flask(__name__)
 
 def showCustomersByClusterWeb(df):
-    clusters = sorted(df["cluster"].unique())
-    cluster_tables = {}
-    cluster_counts = {}
+    cluster_data = showCustomersByCluster(df)
+    clusters = list(cluster_data.keys())
 
-    for cluster in clusters:
-        cluster_df = df[df["cluster"] == cluster]
-        cluster_tables[cluster] = cluster_df.to_html(index=False, classes="data-table")
-        cluster_counts[cluster] = len(cluster_df)
+    cluster_tables = {
+        c: cluster_data[c]["data"].to_html(index=False, classes="data-table")
+        for c in clusters
+    }
+    cluster_counts = {
+        c: cluster_data[c]["count"] for c in clusters
+    }
 
     html_template = """
     <html>
